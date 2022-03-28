@@ -1,0 +1,2503 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {
+    "_cell_guid": "b1076dfc-b9ad-4769-8c92-a6c4dae69d19",
+    "_uuid": "8f2839f25d086af736a60e9eeb907d3b93b6e0e5",
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:23.782747Z",
+     "iopub.status.busy": "2022-03-27T01:00:23.782012Z",
+     "iopub.status.idle": "2022-03-27T01:00:23.794441Z",
+     "shell.execute_reply": "2022-03-27T01:00:23.793761Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:36.099529Z"
+    },
+    "papermill": {
+     "duration": 0.079353,
+     "end_time": "2022-03-27T01:00:23.794624",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:23.715271",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "/kaggle/input/data-storm-30/validation_data.csv\n",
+      "/kaggle/input/data-storm-30/train_data.csv\n",
+      "/kaggle/input/data-storm-30/test_data.csv\n"
+     ]
+    }
+   ],
+   "source": [
+    "# This Python 3 environment comes with many helpful analytics libraries installed\n",
+    "# It is defined by the kaggle/python Docker image: https://github.com/kaggle/docker-python\n",
+    "# For example, here's several helpful packages to load\n",
+    "\n",
+    "import numpy as np # linear algebra\n",
+    "import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)\n",
+    "\n",
+    "# Input data files are available in the read-only \"../input/\" directory\n",
+    "# For example, running this (by clicking run or pressing Shift+Enter) will list all files under the input directory\n",
+    "\n",
+    "import os\n",
+    "for dirname, _, filenames in os.walk('/kaggle/input'):\n",
+    "    for filename in filenames:\n",
+    "        print(os.path.join(dirname, filename))\n",
+    "        \n",
+    "# You can write up to 20GB to the current directory (/kaggle/working/) that gets preserved as output when you create a version using \"Save & Run All\" \n",
+    "# You can also write temporary files to /kaggle/temp/, but they won't be saved outside of the current session"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:23.909911Z",
+     "iopub.status.busy": "2022-03-27T01:00:23.909197Z",
+     "iopub.status.idle": "2022-03-27T01:00:23.912587Z",
+     "shell.execute_reply": "2022-03-27T01:00:23.913274Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:36.137752Z"
+    },
+    "papermill": {
+     "duration": 0.063903,
+     "end_time": "2022-03-27T01:00:23.913459",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:23.849556",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "import warnings\n",
+    "warnings.filterwarnings(\"ignore\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "papermill": {
+     "duration": 0.054467,
+     "end_time": "2022-03-27T01:00:24.023860",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:23.969393",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "## Preprocessing of Data"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "papermill": {
+     "duration": 0.055807,
+     "end_time": "2022-03-27T01:00:24.134770",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:24.078963",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "#### Extracting the data into dataframes"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:24.247490Z",
+     "iopub.status.busy": "2022-03-27T01:00:24.246756Z",
+     "iopub.status.idle": "2022-03-27T01:00:24.291489Z",
+     "shell.execute_reply": "2022-03-27T01:00:24.292060Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:36.144074Z"
+    },
+    "papermill": {
+     "duration": 0.102801,
+     "end_time": "2022-03-27T01:00:24.292274",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:24.189473",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "# Obtaining the file paths for the input data for analysis\n",
+    "train_filepath = \"/kaggle/input/data-storm-30/train_data.csv\"\n",
+    "vali_filepath = \"/kaggle/input/data-storm-30/validation_data.csv\"\n",
+    "test_filepath = \"/kaggle/input/data-storm-30/test_data.csv\"\n",
+    "\n",
+    "# Extracting the input files into dataframes\n",
+    "train_file = pd.read_csv(train_filepath)\n",
+    "vali_file = pd.read_csv(vali_filepath)\n",
+    "test_file  = pd.read_csv(test_filepath)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:24.404844Z",
+     "iopub.status.busy": "2022-03-27T01:00:24.404179Z",
+     "iopub.status.idle": "2022-03-27T01:00:24.421554Z",
+     "shell.execute_reply": "2022-03-27T01:00:24.422124Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:36.203807Z"
+    },
+    "papermill": {
+     "duration": 0.075202,
+     "end_time": "2022-03-27T01:00:24.422327",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:24.347125",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>CategoryCode</th>\n",
+       "      <th>ItemCode</th>\n",
+       "      <th>DateID</th>\n",
+       "      <th>DailySales</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>category_2</td>\n",
+       "      <td>117610</td>\n",
+       "      <td>11/6/2021</td>\n",
+       "      <td>7</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>category_4</td>\n",
+       "      <td>836584</td>\n",
+       "      <td>11/18/2021</td>\n",
+       "      <td>16</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>category_1</td>\n",
+       "      <td>370195</td>\n",
+       "      <td>1/24/2022</td>\n",
+       "      <td>6</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>category_2</td>\n",
+       "      <td>172582</td>\n",
+       "      <td>10/30/2021</td>\n",
+       "      <td>5</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>category_2</td>\n",
+       "      <td>1006009</td>\n",
+       "      <td>10/30/2021</td>\n",
+       "      <td>5</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "  CategoryCode  ItemCode      DateID  DailySales\n",
+       "0   category_2    117610   11/6/2021           7\n",
+       "1   category_4    836584  11/18/2021          16\n",
+       "2   category_1    370195   1/24/2022           6\n",
+       "3   category_2    172582  10/30/2021           5\n",
+       "4   category_2   1006009  10/30/2021           5"
+      ]
+     },
+     "execution_count": 4,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# display top rows of training and test data\n",
+    "train_file.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:24.543104Z",
+     "iopub.status.busy": "2022-03-27T01:00:24.542423Z",
+     "iopub.status.idle": "2022-03-27T01:00:24.546731Z",
+     "shell.execute_reply": "2022-03-27T01:00:24.546053Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:36.225420Z"
+    },
+    "papermill": {
+     "duration": 0.069416,
+     "end_time": "2022-03-27T01:00:24.546882",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:24.477466",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>CategoryCode</th>\n",
+       "      <th>ItemCode</th>\n",
+       "      <th>Week</th>\n",
+       "      <th>WeeklySales</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>category_2</td>\n",
+       "      <td>1044502</td>\n",
+       "      <td>w1</td>\n",
+       "      <td>11</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>category_2</td>\n",
+       "      <td>1105009</td>\n",
+       "      <td>w1</td>\n",
+       "      <td>11</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>category_2</td>\n",
+       "      <td>913561</td>\n",
+       "      <td>w4</td>\n",
+       "      <td>5</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>category_1</td>\n",
+       "      <td>1048975</td>\n",
+       "      <td>w4</td>\n",
+       "      <td>30</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>category_1</td>\n",
+       "      <td>17287</td>\n",
+       "      <td>w2</td>\n",
+       "      <td>60</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "  CategoryCode  ItemCode Week  WeeklySales\n",
+       "0   category_2   1044502   w1           11\n",
+       "1   category_2   1105009   w1           11\n",
+       "2   category_2    913561   w4            5\n",
+       "3   category_1   1048975   w4           30\n",
+       "4   category_1     17287   w2           60"
+      ]
+     },
+     "execution_count": 5,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "vali_file.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:24.669254Z",
+     "iopub.status.busy": "2022-03-27T01:00:24.668545Z",
+     "iopub.status.idle": "2022-03-27T01:00:24.686677Z",
+     "shell.execute_reply": "2022-03-27T01:00:24.685318Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:36.236727Z"
+    },
+    "papermill": {
+     "duration": 0.084404,
+     "end_time": "2022-03-27T01:00:24.686935",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:24.602531",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0\n",
+      "0\n",
+      "0\n",
+      "0\n",
+      "0\n",
+      "0\n",
+      "0\n",
+      "0\n",
+      "0\n",
+      "0\n",
+      "0\n"
+     ]
+    }
+   ],
+   "source": [
+    "# checking the number of rows with missing values in each of the dataframes\n",
+    "\n",
+    "print(pd.isnull(train_file.CategoryCode).sum())\n",
+    "print(pd.isnull(train_file.ItemCode).sum())\n",
+    "print(pd.isnull(train_file.DateID).sum())\n",
+    "print(pd.isnull(train_file.DailySales).sum())\n",
+    "\n",
+    "print(pd.isnull(vali_file.CategoryCode).sum())\n",
+    "print(pd.isnull(vali_file.ItemCode).sum())\n",
+    "print(pd.isnull(vali_file.Week).sum())\n",
+    "print(pd.isnull(vali_file.WeeklySales).sum())\n",
+    "\n",
+    "print(pd.isnull(test_file.CategoryCode).sum())\n",
+    "print(pd.isnull(test_file.ItemCode).sum())\n",
+    "print(pd.isnull(test_file.Week).sum())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "papermill": {
+     "duration": 0.056039,
+     "end_time": "2022-03-27T01:00:24.799832",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:24.743793",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "Therefore there are no missing data inputs we have to impute"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:24.920794Z",
+     "iopub.status.busy": "2022-03-27T01:00:24.920089Z",
+     "iopub.status.idle": "2022-03-27T01:00:24.923600Z",
+     "shell.execute_reply": "2022-03-27T01:00:24.922886Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:36.264717Z"
+    },
+    "papermill": {
+     "duration": 0.066952,
+     "end_time": "2022-03-27T01:00:24.923753",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:24.856801",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "CategoryCode    object\n",
+       "ItemCode         int64\n",
+       "DateID          object\n",
+       "DailySales       int64\n",
+       "dtype: object"
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# data types in train data\n",
+    "train_file.dtypes"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:25.043419Z",
+     "iopub.status.busy": "2022-03-27T01:00:25.042713Z",
+     "iopub.status.idle": "2022-03-27T01:00:25.046997Z",
+     "shell.execute_reply": "2022-03-27T01:00:25.046438Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:36.279652Z"
+    },
+    "papermill": {
+     "duration": 0.066105,
+     "end_time": "2022-03-27T01:00:25.047177",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:24.981072",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "# creating copies to the data files we use\n",
+    "train = train_file.copy()\n",
+    "vali = vali_file.copy()\n",
+    "test = test_file.copy()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "papermill": {
+     "duration": 0.056554,
+     "end_time": "2022-03-27T01:00:25.160289",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:25.103735",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "### Handling of the Date Variable"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "papermill": {
+     "duration": 0.056878,
+     "end_time": "2022-03-27T01:00:25.273812",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:25.216934",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "Since our Test and Validation Data mainly require No of Sales value in quantity units per week, we shall convert our 'DateID' column into Week format.\n",
+    "\n",
+    "We could use Month as a feature but it will be directly related to the Week number of the year. Hence using only the Week number should be sufficient.\n",
+    "\n",
+    "Weeks from 39 to 52 represent data collected during the year 2021 and Weeks from 1 to 10 represent the data collected in the year 2022.\n",
+    "\n",
+    "To allow continuity of the date data from 2021 to 2022, the weeks in the year 2022 (given as 1 to 10) will be adjusted to by adding 52 to each of them."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:25.404752Z",
+     "iopub.status.busy": "2022-03-27T01:00:25.399538Z",
+     "iopub.status.idle": "2022-03-27T01:00:25.430518Z",
+     "shell.execute_reply": "2022-03-27T01:00:25.429868Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:36.287966Z"
+    },
+    "papermill": {
+     "duration": 0.099165,
+     "end_time": "2022-03-27T01:00:25.430676",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:25.331511",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "# converting time column into datetime object in Training Data\n",
+    "train['DateID'] = pd.to_datetime(train.DateID)\n",
+    "\n",
+    "# creating columns for month and week\n",
+    "train['Week'] = train.DateID.dt.week"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:25.552924Z",
+     "iopub.status.busy": "2022-03-27T01:00:25.552233Z",
+     "iopub.status.idle": "2022-03-27T01:00:28.289627Z",
+     "shell.execute_reply": "2022-03-27T01:00:28.290241Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:36.334303Z"
+    },
+    "papermill": {
+     "duration": 2.80191,
+     "end_time": "2022-03-27T01:00:28.290431",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:25.488521",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "# replacing the weeks given for 2022 (which are in the range of 1 to 10) into the raange of 53 to 62\n",
+    "for idx in train.index:\n",
+    "    if train.loc[idx,'Week'] <= 10:\n",
+    "        train.loc[idx,'Week'] = train.loc[idx,'Week'] + 52"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:28.409549Z",
+     "iopub.status.busy": "2022-03-27T01:00:28.408847Z",
+     "iopub.status.idle": "2022-03-27T01:00:28.415777Z",
+     "shell.execute_reply": "2022-03-27T01:00:28.416403Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:38.605001Z"
+    },
+    "papermill": {
+     "duration": 0.069081,
+     "end_time": "2022-03-27T01:00:28.416588",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:28.347507",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "52    1087\n",
+       "51    1072\n",
+       "48    1062\n",
+       "54    1055\n",
+       "49    1054\n",
+       "50    1053\n",
+       "47    1050\n",
+       "53    1039\n",
+       "45    1027\n",
+       "57    1020\n",
+       "46    1016\n",
+       "55    1015\n",
+       "56    1014\n",
+       "43    1011\n",
+       "44    1009\n",
+       "40     992\n",
+       "58     978\n",
+       "41     974\n",
+       "42     938\n",
+       "39     455\n",
+       "Name: Week, dtype: int64"
+      ]
+     },
+     "execution_count": 11,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "train.Week.value_counts()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "papermill": {
+     "duration": 0.057037,
+     "end_time": "2022-03-27T01:00:28.530955",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:28.473918",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "We can see that incomplete week 39 (1st October - 3rd october 2021) has 455 datapoints while all the other weeks have values ranging from 900-1100.\n",
+    "\n",
+    "Therefore we can choose to omit the data points for week 39 from our training, or we can adjust proportionally the datapoints for each itemcode up to 7/3 times for the whole week instead of 3 days."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "papermill": {
+     "duration": 0.056859,
+     "end_time": "2022-03-27T01:00:28.645411",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:28.588552",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "##### for this method we will remove the the data points from week 39"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:28.763082Z",
+     "iopub.status.busy": "2022-03-27T01:00:28.762384Z",
+     "iopub.status.idle": "2022-03-27T01:00:28.783665Z",
+     "shell.execute_reply": "2022-03-27T01:00:28.783011Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:38.616581Z"
+    },
+    "papermill": {
+     "duration": 0.080793,
+     "end_time": "2022-03-27T01:00:28.783840",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:28.703047",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>CategoryCode</th>\n",
+       "      <th>ItemCode</th>\n",
+       "      <th>DateID</th>\n",
+       "      <th>DailySales</th>\n",
+       "      <th>Week</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>category_2</td>\n",
+       "      <td>117610</td>\n",
+       "      <td>2021-11-06</td>\n",
+       "      <td>7</td>\n",
+       "      <td>44</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>category_4</td>\n",
+       "      <td>836584</td>\n",
+       "      <td>2021-11-18</td>\n",
+       "      <td>16</td>\n",
+       "      <td>46</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>category_1</td>\n",
+       "      <td>370195</td>\n",
+       "      <td>2022-01-24</td>\n",
+       "      <td>6</td>\n",
+       "      <td>56</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>category_2</td>\n",
+       "      <td>172582</td>\n",
+       "      <td>2021-10-30</td>\n",
+       "      <td>5</td>\n",
+       "      <td>43</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>category_2</td>\n",
+       "      <td>1006009</td>\n",
+       "      <td>2021-10-30</td>\n",
+       "      <td>5</td>\n",
+       "      <td>43</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>...</th>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>19912</th>\n",
+       "      <td>category_2</td>\n",
+       "      <td>75886</td>\n",
+       "      <td>2021-10-04</td>\n",
+       "      <td>1</td>\n",
+       "      <td>40</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>19915</th>\n",
+       "      <td>category_1</td>\n",
+       "      <td>36898</td>\n",
+       "      <td>2021-10-12</td>\n",
+       "      <td>1</td>\n",
+       "      <td>41</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>19916</th>\n",
+       "      <td>category_2</td>\n",
+       "      <td>225259</td>\n",
+       "      <td>2021-10-04</td>\n",
+       "      <td>4</td>\n",
+       "      <td>40</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>19917</th>\n",
+       "      <td>category_2</td>\n",
+       "      <td>111436</td>\n",
+       "      <td>2021-10-12</td>\n",
+       "      <td>1</td>\n",
+       "      <td>41</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>19920</th>\n",
+       "      <td>category_1</td>\n",
+       "      <td>371104</td>\n",
+       "      <td>2021-10-04</td>\n",
+       "      <td>4</td>\n",
+       "      <td>40</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>19466 rows × 5 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "      CategoryCode  ItemCode     DateID  DailySales  Week\n",
+       "0       category_2    117610 2021-11-06           7    44\n",
+       "1       category_4    836584 2021-11-18          16    46\n",
+       "2       category_1    370195 2022-01-24           6    56\n",
+       "3       category_2    172582 2021-10-30           5    43\n",
+       "4       category_2   1006009 2021-10-30           5    43\n",
+       "...            ...       ...        ...         ...   ...\n",
+       "19912   category_2     75886 2021-10-04           1    40\n",
+       "19915   category_1     36898 2021-10-12           1    41\n",
+       "19916   category_2    225259 2021-10-04           4    40\n",
+       "19917   category_2    111436 2021-10-12           1    41\n",
+       "19920   category_1    371104 2021-10-04           4    40\n",
+       "\n",
+       "[19466 rows x 5 columns]"
+      ]
+     },
+     "execution_count": 12,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "train = train.loc[train.Week > 39]\n",
+    "train"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "papermill": {
+     "duration": 0.05709,
+     "end_time": "2022-03-27T01:00:28.899197",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:28.842107",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "### Handling the date (Week) variable in the validation data "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:29.016274Z",
+     "iopub.status.busy": "2022-03-27T01:00:29.015606Z",
+     "iopub.status.idle": "2022-03-27T01:00:29.023175Z",
+     "shell.execute_reply": "2022-03-27T01:00:29.023792Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:38.650553Z"
+    },
+    "papermill": {
+     "duration": 0.067741,
+     "end_time": "2022-03-27T01:00:29.024004",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:28.956263",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "# adding the date features into test data\n",
+    "vali['Week'] = vali.Week.replace(\"w1\",59)    #  7th week of 2022\n",
+    "vali['Week'] = vali.Week.replace(\"w2\",60)    #  8th week of 2022\n",
+    "vali['Week'] = vali.Week.replace(\"w3\",61)    #  9th week of 2022\n",
+    "vali['Week'] = vali.Week.replace(\"w4\",62)    # 10th week of 2022"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:29.142029Z",
+     "iopub.status.busy": "2022-03-27T01:00:29.141383Z",
+     "iopub.status.idle": "2022-03-27T01:00:29.154915Z",
+     "shell.execute_reply": "2022-03-27T01:00:29.155518Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:38.663597Z"
+    },
+    "papermill": {
+     "duration": 0.074346,
+     "end_time": "2022-03-27T01:00:29.155699",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:29.081353",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>CategoryCode</th>\n",
+       "      <th>ItemCode</th>\n",
+       "      <th>Week</th>\n",
+       "      <th>WeeklySales</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>category_2</td>\n",
+       "      <td>1044502</td>\n",
+       "      <td>59</td>\n",
+       "      <td>11</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>category_2</td>\n",
+       "      <td>1105009</td>\n",
+       "      <td>59</td>\n",
+       "      <td>11</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>category_2</td>\n",
+       "      <td>913561</td>\n",
+       "      <td>62</td>\n",
+       "      <td>5</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>category_1</td>\n",
+       "      <td>1048975</td>\n",
+       "      <td>62</td>\n",
+       "      <td>30</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>category_1</td>\n",
+       "      <td>17287</td>\n",
+       "      <td>60</td>\n",
+       "      <td>60</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>...</th>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>365</th>\n",
+       "      <td>category_2</td>\n",
+       "      <td>124954</td>\n",
+       "      <td>60</td>\n",
+       "      <td>43</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>366</th>\n",
+       "      <td>category_2</td>\n",
+       "      <td>40759</td>\n",
+       "      <td>59</td>\n",
+       "      <td>48</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>367</th>\n",
+       "      <td>category_1</td>\n",
+       "      <td>1090303</td>\n",
+       "      <td>59</td>\n",
+       "      <td>19</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>368</th>\n",
+       "      <td>category_2</td>\n",
+       "      <td>1090276</td>\n",
+       "      <td>61</td>\n",
+       "      <td>6</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>369</th>\n",
+       "      <td>category_1</td>\n",
+       "      <td>3418</td>\n",
+       "      <td>62</td>\n",
+       "      <td>69</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>370 rows × 4 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "    CategoryCode  ItemCode  Week  WeeklySales\n",
+       "0     category_2   1044502    59           11\n",
+       "1     category_2   1105009    59           11\n",
+       "2     category_2    913561    62            5\n",
+       "3     category_1   1048975    62           30\n",
+       "4     category_1     17287    60           60\n",
+       "..           ...       ...   ...          ...\n",
+       "365   category_2    124954    60           43\n",
+       "366   category_2     40759    59           48\n",
+       "367   category_1   1090303    59           19\n",
+       "368   category_2   1090276    61            6\n",
+       "369   category_1      3418    62           69\n",
+       "\n",
+       "[370 rows x 4 columns]"
+      ]
+     },
+     "execution_count": 14,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "vali"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "papermill": {
+     "duration": 0.057377,
+     "end_time": "2022-03-27T01:00:29.270898",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:29.213521",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "#### Handling the date (Week) variable in the test data"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:29.390259Z",
+     "iopub.status.busy": "2022-03-27T01:00:29.389552Z",
+     "iopub.status.idle": "2022-03-27T01:00:29.398321Z",
+     "shell.execute_reply": "2022-03-27T01:00:29.397613Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:38.686116Z"
+    },
+    "papermill": {
+     "duration": 0.069787,
+     "end_time": "2022-03-27T01:00:29.398471",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:29.328684",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "# adding the date features into test data\n",
+    "test['Week'] = test.Week.replace(\"w1\",59)    #  7th week of 2022\n",
+    "test['Week'] = test.Week.replace(\"w2\",60)    #  8th week of 2022\n",
+    "test['Week'] = test.Week.replace(\"w3\",61)    #  9th week of 2022\n",
+    "test['Week'] = test.Week.replace(\"w4\",62)    # 10th week of 2022"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:29.520036Z",
+     "iopub.status.busy": "2022-03-27T01:00:29.519372Z",
+     "iopub.status.idle": "2022-03-27T01:00:29.530429Z",
+     "shell.execute_reply": "2022-03-27T01:00:29.530969Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:38.700134Z"
+    },
+    "papermill": {
+     "duration": 0.074865,
+     "end_time": "2022-03-27T01:00:29.531167",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:29.456302",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>CategoryCode</th>\n",
+       "      <th>ItemCode</th>\n",
+       "      <th>Week</th>\n",
+       "      <th>PredictedSales</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>category_1</td>\n",
+       "      <td>43738</td>\n",
+       "      <td>62</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>category_2</td>\n",
+       "      <td>1006090</td>\n",
+       "      <td>59</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>category_2</td>\n",
+       "      <td>1076929</td>\n",
+       "      <td>62</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>category_1</td>\n",
+       "      <td>1081321</td>\n",
+       "      <td>61</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>category_2</td>\n",
+       "      <td>216151</td>\n",
+       "      <td>62</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>...</th>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>372</th>\n",
+       "      <td>category_2</td>\n",
+       "      <td>1101571</td>\n",
+       "      <td>59</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>373</th>\n",
+       "      <td>category_2</td>\n",
+       "      <td>1090258</td>\n",
+       "      <td>62</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>374</th>\n",
+       "      <td>category_2</td>\n",
+       "      <td>906595</td>\n",
+       "      <td>59</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>375</th>\n",
+       "      <td>category_2</td>\n",
+       "      <td>32245</td>\n",
+       "      <td>59</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>376</th>\n",
+       "      <td>category_2</td>\n",
+       "      <td>1006090</td>\n",
+       "      <td>60</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>377 rows × 4 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "    CategoryCode  ItemCode  Week  PredictedSales\n",
+       "0     category_1     43738    62             NaN\n",
+       "1     category_2   1006090    59             NaN\n",
+       "2     category_2   1076929    62             NaN\n",
+       "3     category_1   1081321    61             NaN\n",
+       "4     category_2    216151    62             NaN\n",
+       "..           ...       ...   ...             ...\n",
+       "372   category_2   1101571    59             NaN\n",
+       "373   category_2   1090258    62             NaN\n",
+       "374   category_2    906595    59             NaN\n",
+       "375   category_2     32245    59             NaN\n",
+       "376   category_2   1006090    60             NaN\n",
+       "\n",
+       "[377 rows x 4 columns]"
+      ]
+     },
+     "execution_count": 16,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "test"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "papermill": {
+     "duration": 0.058396,
+     "end_time": "2022-03-27T01:00:29.648023",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:29.589627",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "#### Creating a Dataframe for where Sales data are recorded weekly"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "papermill": {
+     "duration": 0.057949,
+     "end_time": "2022-03-27T01:00:29.764132",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:29.706183",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "Since our test data and validation data both use the week as the time frame, let us restructure our dataframe so that instead of units sold on a daily basis (DailySales) , we will use the units sold on a weekly basis (WeeklySales)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:29.886117Z",
+     "iopub.status.busy": "2022-03-27T01:00:29.883043Z",
+     "iopub.status.idle": "2022-03-27T01:00:29.908742Z",
+     "shell.execute_reply": "2022-03-27T01:00:29.909415Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:38.719124Z"
+    },
+    "papermill": {
+     "duration": 0.087331,
+     "end_time": "2022-03-27T01:00:29.909595",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:29.822264",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th>sum</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Week</th>\n",
+       "      <th>ItemCode</th>\n",
+       "      <th>CategoryCode</th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th rowspan=\"5\" valign=\"top\">40</th>\n",
+       "      <th>3418</th>\n",
+       "      <th>category_1</th>\n",
+       "      <td>42</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1032550</th>\n",
+       "      <th>category_1</th>\n",
+       "      <td>16</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1032559</th>\n",
+       "      <th>category_1</th>\n",
+       "      <td>17</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1032568</th>\n",
+       "      <th>category_1</th>\n",
+       "      <td>10</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1032586</th>\n",
+       "      <th>category_1</th>\n",
+       "      <td>21</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>...</th>\n",
+       "      <th>...</th>\n",
+       "      <th>...</th>\n",
+       "      <td>...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th rowspan=\"5\" valign=\"top\">58</th>\n",
+       "      <th>211309</th>\n",
+       "      <th>category_2</th>\n",
+       "      <td>14</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>213802</th>\n",
+       "      <th>category_2</th>\n",
+       "      <td>7</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>216151</th>\n",
+       "      <th>category_2</th>\n",
+       "      <td>13</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>145978</th>\n",
+       "      <th>category_1</th>\n",
+       "      <td>32</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1105027</th>\n",
+       "      <th>category_2</th>\n",
+       "      <td>14</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>3593 rows × 1 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                            sum\n",
+       "Week ItemCode CategoryCode     \n",
+       "40   3418     category_1     42\n",
+       "     1032550  category_1     16\n",
+       "     1032559  category_1     17\n",
+       "     1032568  category_1     10\n",
+       "     1032586  category_1     21\n",
+       "...                         ...\n",
+       "58   211309   category_2     14\n",
+       "     213802   category_2      7\n",
+       "     216151   category_2     13\n",
+       "     145978   category_1     32\n",
+       "     1105027  category_2     14\n",
+       "\n",
+       "[3593 rows x 1 columns]"
+      ]
+     },
+     "execution_count": 17,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "## Grouping the data rows based on both ItemCode and Week and the Category Code\n",
+    "\n",
+    "train_grouped = train.groupby(['Week', 'ItemCode', 'CategoryCode']).DailySales.agg([sum])\n",
+    "train_grouped.sort_values(by='Week')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:30.030206Z",
+     "iopub.status.busy": "2022-03-27T01:00:30.029541Z",
+     "iopub.status.idle": "2022-03-27T01:00:30.037617Z",
+     "shell.execute_reply": "2022-03-27T01:00:30.038115Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:38.756709Z"
+    },
+    "papermill": {
+     "duration": 0.069891,
+     "end_time": "2022-03-27T01:00:30.038309",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:29.968418",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "# Resetting the index\n",
+    "train = train_grouped.reset_index()\n",
+    "\n",
+    "# renaming the sum column into Weekly Sales\n",
+    "\n",
+    "train['WeeklySales'] = train['sum']\n",
+    "train.drop('sum',axis=1,inplace=True)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:30.159924Z",
+     "iopub.status.busy": "2022-03-27T01:00:30.159074Z",
+     "iopub.status.idle": "2022-03-27T01:00:30.171570Z",
+     "shell.execute_reply": "2022-03-27T01:00:30.172092Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:38.767184Z"
+    },
+    "papermill": {
+     "duration": 0.074824,
+     "end_time": "2022-03-27T01:00:30.172305",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:30.097481",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>Week</th>\n",
+       "      <th>ItemCode</th>\n",
+       "      <th>CategoryCode</th>\n",
+       "      <th>WeeklySales</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>40</td>\n",
+       "      <td>3418</td>\n",
+       "      <td>category_1</td>\n",
+       "      <td>42</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>40</td>\n",
+       "      <td>3427</td>\n",
+       "      <td>category_1</td>\n",
+       "      <td>40</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>40</td>\n",
+       "      <td>7666</td>\n",
+       "      <td>category_3</td>\n",
+       "      <td>119</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>40</td>\n",
+       "      <td>9925</td>\n",
+       "      <td>category_2</td>\n",
+       "      <td>9</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>40</td>\n",
+       "      <td>16936</td>\n",
+       "      <td>category_3</td>\n",
+       "      <td>25</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>...</th>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3588</th>\n",
+       "      <td>58</td>\n",
+       "      <td>1101769</td>\n",
+       "      <td>category_2</td>\n",
+       "      <td>33</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3589</th>\n",
+       "      <td>58</td>\n",
+       "      <td>1103056</td>\n",
+       "      <td>category_2</td>\n",
+       "      <td>10</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3590</th>\n",
+       "      <td>58</td>\n",
+       "      <td>1105009</td>\n",
+       "      <td>category_2</td>\n",
+       "      <td>11</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3591</th>\n",
+       "      <td>58</td>\n",
+       "      <td>1105018</td>\n",
+       "      <td>category_2</td>\n",
+       "      <td>6</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3592</th>\n",
+       "      <td>58</td>\n",
+       "      <td>1105027</td>\n",
+       "      <td>category_2</td>\n",
+       "      <td>14</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>3593 rows × 4 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "      Week  ItemCode CategoryCode  WeeklySales\n",
+       "0       40      3418   category_1           42\n",
+       "1       40      3427   category_1           40\n",
+       "2       40      7666   category_3          119\n",
+       "3       40      9925   category_2            9\n",
+       "4       40     16936   category_3           25\n",
+       "...    ...       ...          ...          ...\n",
+       "3588    58   1101769   category_2           33\n",
+       "3589    58   1103056   category_2           10\n",
+       "3590    58   1105009   category_2           11\n",
+       "3591    58   1105018   category_2            6\n",
+       "3592    58   1105027   category_2           14\n",
+       "\n",
+       "[3593 rows x 4 columns]"
+      ]
+     },
+     "execution_count": 19,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "train"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "papermill": {
+     "duration": 0.059937,
+     "end_time": "2022-03-27T01:00:30.292824",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:30.232887",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "#### One hot encoding to add dummy variables for the Category Codes"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:30.423252Z",
+     "iopub.status.busy": "2022-03-27T01:00:30.422570Z",
+     "iopub.status.idle": "2022-03-27T01:00:30.429893Z",
+     "shell.execute_reply": "2022-03-27T01:00:30.430545Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:38.797835Z"
+    },
+    "papermill": {
+     "duration": 0.077219,
+     "end_time": "2022-03-27T01:00:30.430742",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:30.353523",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "# Using one-hot encoding to get dummy variables for the category the item belongs to\n",
+    "# we can drop one of the columns from these dummy varibles. We will drop the first column\n",
+    "\n",
+    "categories_train = pd.get_dummies(train.CategoryCode, drop_first = True)\n",
+    "categories_vali = pd.get_dummies(vali.CategoryCode, drop_first = True)\n",
+    "categories_test = pd.get_dummies(test.CategoryCode, drop_first = True)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:30.554282Z",
+     "iopub.status.busy": "2022-03-27T01:00:30.553594Z",
+     "iopub.status.idle": "2022-03-27T01:00:30.559836Z",
+     "shell.execute_reply": "2022-03-27T01:00:30.560500Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:38.814048Z"
+    },
+    "papermill": {
+     "duration": 0.069368,
+     "end_time": "2022-03-27T01:00:30.560675",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:30.491307",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "# Adding the dummy variables for Item Categories\n",
+    "train = pd.concat([train, categories_train], axis=1)\n",
+    "vali = pd.concat([vali, categories_vali], axis=1)\n",
+    "test = pd.concat([test, categories_test], axis=1)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:30.686366Z",
+     "iopub.status.busy": "2022-03-27T01:00:30.685652Z",
+     "iopub.status.idle": "2022-03-27T01:00:30.690542Z",
+     "shell.execute_reply": "2022-03-27T01:00:30.691115Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:38.829819Z"
+    },
+    "papermill": {
+     "duration": 0.070928,
+     "end_time": "2022-03-27T01:00:30.691318",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:30.620390",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "# Removing the original column for Category Codes\n",
+    "train.drop('CategoryCode', axis=1, inplace = True)\n",
+    "vali.drop('CategoryCode', axis=1, inplace = True)\n",
+    "test.drop('CategoryCode', axis=1, inplace = True)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "papermill": {
+     "duration": 0.059687,
+     "end_time": "2022-03-27T01:00:30.810747",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:30.751060",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "#### Correlations with Features"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:30.934135Z",
+     "iopub.status.busy": "2022-03-27T01:00:30.933489Z",
+     "iopub.status.idle": "2022-03-27T01:00:32.543473Z",
+     "shell.execute_reply": "2022-03-27T01:00:32.542815Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:38.853229Z"
+    },
+    "papermill": {
+     "duration": 1.672923,
+     "end_time": "2022-03-27T01:00:32.543624",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:30.870701",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<AxesSubplot:>"
+      ]
+     },
+     "execution_count": 23,
+     "metadata": {},
+     "output_type": "execute_result"
+    },
+    {
+     "data": {
+      "image/png": "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\n",
+      "text/plain": [
+       "<Figure size 432x288 with 2 Axes>"
+      ]
+     },
+     "metadata": {
+      "needs_background": "light"
+     },
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "## correlation of all features with each other\n",
+    "import seaborn as sns\n",
+    "sns.heatmap(train.corr(), annot=True)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "papermill": {
+     "duration": 0.061685,
+     "end_time": "2022-03-27T01:00:32.667995",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:32.606310",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "## Modelling the Data"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "papermill": {
+     "duration": 0.061785,
+     "end_time": "2022-03-27T01:00:32.791695",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:32.729910",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "#### Selecting the features and Target variables from training set and validation set"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:32.920383Z",
+     "iopub.status.busy": "2022-03-27T01:00:32.919322Z",
+     "iopub.status.idle": "2022-03-27T01:00:32.925355Z",
+     "shell.execute_reply": "2022-03-27T01:00:32.925920Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:40.510486Z"
+    },
+    "papermill": {
+     "duration": 0.072255,
+     "end_time": "2022-03-27T01:00:32.926121",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:32.853866",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "## Training Set split\n",
+    "Train_Y = train['WeeklySales']\n",
+    "Train_X = train[['Week','ItemCode','category_2','category_3','category_4']]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:33.056353Z",
+     "iopub.status.busy": "2022-03-27T01:00:33.053085Z",
+     "iopub.status.idle": "2022-03-27T01:00:33.058320Z",
+     "shell.execute_reply": "2022-03-27T01:00:33.058824Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:40.518534Z"
+    },
+    "papermill": {
+     "duration": 0.070995,
+     "end_time": "2022-03-27T01:00:33.059001",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:32.988006",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "## Validation Set split\n",
+    "Vali_Y = vali['WeeklySales']\n",
+    "Vali_X = vali[['Week','ItemCode','category_2','category_3','category_4']]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "papermill": {
+     "duration": 0.06178,
+     "end_time": "2022-03-27T01:00:33.182356",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:33.120576",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "### Decision Tree Modelling"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 26,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:33.310702Z",
+     "iopub.status.busy": "2022-03-27T01:00:33.309659Z",
+     "iopub.status.idle": "2022-03-27T01:00:33.653444Z",
+     "shell.execute_reply": "2022-03-27T01:00:33.652716Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:40.530626Z"
+    },
+    "papermill": {
+     "duration": 0.409682,
+     "end_time": "2022-03-27T01:00:33.653610",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:33.243928",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "## importing Decision Tree Regressor\n",
+    "from sklearn.tree import DecisionTreeRegressor\n",
+    "\n",
+    "## Importing the library to evaluate model performance - MAPE\n",
+    "from sklearn.metrics import mean_absolute_percentage_error"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "papermill": {
+     "duration": 0.062009,
+     "end_time": "2022-03-27T01:00:33.778684",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:33.716675",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "We will use an utility function to find the best Decision Tree with the most suitable number of leaf nodes which outputs the lowest error (lowest Mean Absolute Percentage Error)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:33.911345Z",
+     "iopub.status.busy": "2022-03-27T01:00:33.910396Z",
+     "iopub.status.idle": "2022-03-27T01:00:33.912796Z",
+     "shell.execute_reply": "2022-03-27T01:00:33.913383Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:40.886998Z"
+    },
+    "papermill": {
+     "duration": 0.072779,
+     "end_time": "2022-03-27T01:00:33.913567",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:33.840788",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "# possible leaf node values to experiment\n",
+    "candidate_leaf_nodes = [25,50,75,100,125,150,175,200,225,250]\n",
+    "\n",
+    "# utility function\n",
+    "def get_mape(leaf_nodes, Train_X, Vali_X, Train_Y, Vali_Y):\n",
+    "    T_Model = DecisionTreeRegressor(max_leaf_nodes = leaf_nodes, random_state=0)\n",
+    "    \n",
+    "    # applying the model and obatining our prediction\n",
+    "    T_Model.fit(Train_X, Train_Y)\n",
+    "    T_Pred_Y = T_Model.predict(Vali_X)\n",
+    "    \n",
+    "    # using mape to compare each model dependent on the leaf nodes\n",
+    "    mape = mean_absolute_percentage_error(Vali_Y, T_Pred_Y).round(5)\n",
+    "    print(leaf_nodes , mape)\n",
+    "    return mape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 28,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:34.041730Z",
+     "iopub.status.busy": "2022-03-27T01:00:34.040680Z",
+     "iopub.status.idle": "2022-03-27T01:00:34.127359Z",
+     "shell.execute_reply": "2022-03-27T01:00:34.126612Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:40.894900Z"
+    },
+    "papermill": {
+     "duration": 0.151582,
+     "end_time": "2022-03-27T01:00:34.127517",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:33.975935",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "25 1.17318\n",
+      "50 1.0291\n",
+      "75 0.9815\n",
+      "100 0.91736\n",
+      "125 0.89664\n",
+      "150 0.78089\n",
+      "175 0.7755\n",
+      "200 0.77763\n",
+      "225 0.77092\n",
+      "250 0.78203\n",
+      "\n",
+      "Best Tree Size is 225\n"
+     ]
+    }
+   ],
+   "source": [
+    "## a list of scores of mae and finding the lowest and mapping to the relevant leaf size\n",
+    "scores = {leaf_size : get_mape(leaf_size, Train_X, Vali_X, Train_Y, Vali_Y) for leaf_size in candidate_leaf_nodes}\n",
+    "\n",
+    "## obtaining the best tree size for the Decision Tree using the above list\n",
+    "best_tree_size = min(scores, key=scores.get)\n",
+    "print('')\n",
+    "print('Best Tree Size is ' + str(best_tree_size))\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "papermill": {
+     "duration": 0.064033,
+     "end_time": "2022-03-27T01:00:34.254716",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:34.190683",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "Using the results of the above analysis we can now define the Decision Tree Model for our data"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 29,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:34.387282Z",
+     "iopub.status.busy": "2022-03-27T01:00:34.386219Z",
+     "iopub.status.idle": "2022-03-27T01:00:34.389522Z",
+     "shell.execute_reply": "2022-03-27T01:00:34.388793Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:40.990649Z"
+    },
+    "papermill": {
+     "duration": 0.071947,
+     "end_time": "2022-03-27T01:00:34.389677",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:34.317730",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "## defining the Decision Tree Model\n",
+    "TreeModel = DecisionTreeRegressor(max_leaf_nodes = best_tree_size, random_state=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 30,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:34.525239Z",
+     "iopub.status.busy": "2022-03-27T01:00:34.524232Z",
+     "iopub.status.idle": "2022-03-27T01:00:34.534231Z",
+     "shell.execute_reply": "2022-03-27T01:00:34.533564Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:40.997630Z"
+    },
+    "papermill": {
+     "duration": 0.080537,
+     "end_time": "2022-03-27T01:00:34.534385",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:34.453848",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "DecisionTreeRegressor(max_leaf_nodes=225, random_state=0)"
+      ]
+     },
+     "execution_count": 30,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "## fitting the data to the model\n",
+    "TreeModel.fit(Train_X , Train_Y)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 31,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:34.668091Z",
+     "iopub.status.busy": "2022-03-27T01:00:34.667375Z",
+     "iopub.status.idle": "2022-03-27T01:00:34.670195Z",
+     "shell.execute_reply": "2022-03-27T01:00:34.669475Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:41.019027Z"
+    },
+    "papermill": {
+     "duration": 0.072895,
+     "end_time": "2022-03-27T01:00:34.670358",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:34.597463",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "## Deriving the predictions for the input features of the Validation dataset\n",
+    "Pred_Vali = TreeModel.predict(Vali_X)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 32,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:34.805702Z",
+     "iopub.status.busy": "2022-03-27T01:00:34.803045Z",
+     "iopub.status.idle": "2022-03-27T01:00:34.810058Z",
+     "shell.execute_reply": "2022-03-27T01:00:34.809501Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:41.026446Z"
+    },
+    "papermill": {
+     "duration": 0.074481,
+     "end_time": "2022-03-27T01:00:34.810245",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:34.735764",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.7709228274556803"
+      ]
+     },
+     "execution_count": 32,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "## Applying the MAPE to the actual target data and predicted target data\n",
+    "mean_absolute_percentage_error(Vali_Y, Pred_Vali)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "papermill": {
+     "duration": 0.065595,
+     "end_time": "2022-03-27T01:00:34.942566",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:34.876971",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "It achieved a better performace with the Decision Tree Model Optimizations than the linear regression (1.85969) when applied to the validation data\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "papermill": {
+     "duration": 0.063373,
+     "end_time": "2022-03-27T01:00:35.070950",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:35.007577",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "## Applying the Model to the Test Dataset"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 33,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:35.203292Z",
+     "iopub.status.busy": "2022-03-27T01:00:35.202601Z",
+     "iopub.status.idle": "2022-03-27T01:00:35.205559Z",
+     "shell.execute_reply": "2022-03-27T01:00:35.204885Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:41.042498Z"
+    },
+    "papermill": {
+     "duration": 0.071637,
+     "end_time": "2022-03-27T01:00:35.205705",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:35.134068",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "## Obtaining the test dataset for forecasting\n",
+    "test = test[['Week','ItemCode','category_2','category_3','category_4']]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 34,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:35.340343Z",
+     "iopub.status.busy": "2022-03-27T01:00:35.339657Z",
+     "iopub.status.idle": "2022-03-27T01:00:35.342426Z",
+     "shell.execute_reply": "2022-03-27T01:00:35.341732Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:41.051147Z"
+    },
+    "papermill": {
+     "duration": 0.073526,
+     "end_time": "2022-03-27T01:00:35.342571",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:35.269045",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "## Applying the model to the test dataset and obtaining the data as integers\n",
+    "Pred_Test = TreeModel.predict(test).astype(int)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 35,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:35.474560Z",
+     "iopub.status.busy": "2022-03-27T01:00:35.473855Z",
+     "iopub.status.idle": "2022-03-27T01:00:35.477168Z",
+     "shell.execute_reply": "2022-03-27T01:00:35.476623Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:41.063790Z"
+    },
+    "papermill": {
+     "duration": 0.071581,
+     "end_time": "2022-03-27T01:00:35.477314",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:35.405733",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "submission_file = pd.DataFrame()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 36,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:35.613259Z",
+     "iopub.status.busy": "2022-03-27T01:00:35.612491Z",
+     "iopub.status.idle": "2022-03-27T01:00:35.616836Z",
+     "shell.execute_reply": "2022-03-27T01:00:35.616243Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:41.075621Z"
+    },
+    "papermill": {
+     "duration": 0.076566,
+     "end_time": "2022-03-27T01:00:35.616986",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:35.540420",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "## creating submission dataset\n",
+    "submission_file['ID'] = test_file['CategoryCode'].astype(str)+'_'+test_file['ItemCode'].astype(str)+'_'+test_file['Week']\n",
+    "submission_file['WeeklySales'] = Pred_Test"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 37,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:35.756166Z",
+     "iopub.status.busy": "2022-03-27T01:00:35.755419Z",
+     "iopub.status.idle": "2022-03-27T01:00:35.760231Z",
+     "shell.execute_reply": "2022-03-27T01:00:35.759568Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:41.091068Z"
+    },
+    "papermill": {
+     "duration": 0.079719,
+     "end_time": "2022-03-27T01:00:35.760398",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:35.680679",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>ID</th>\n",
+       "      <th>WeeklySales</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>category_1_43738_w4</td>\n",
+       "      <td>13</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>category_2_1006090_w1</td>\n",
+       "      <td>11</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>category_2_1076929_w4</td>\n",
+       "      <td>13</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>category_1_1081321_w3</td>\n",
+       "      <td>13</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>category_2_216151_w4</td>\n",
+       "      <td>13</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>...</th>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>372</th>\n",
+       "      <td>category_2_1101571_w1</td>\n",
+       "      <td>13</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>373</th>\n",
+       "      <td>category_2_1090258_w4</td>\n",
+       "      <td>13</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>374</th>\n",
+       "      <td>category_2_906595_w1</td>\n",
+       "      <td>11</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>375</th>\n",
+       "      <td>category_2_32245_w1</td>\n",
+       "      <td>39</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>376</th>\n",
+       "      <td>category_2_1006090_w2</td>\n",
+       "      <td>11</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>377 rows × 2 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                        ID  WeeklySales\n",
+       "0      category_1_43738_w4           13\n",
+       "1    category_2_1006090_w1           11\n",
+       "2    category_2_1076929_w4           13\n",
+       "3    category_1_1081321_w3           13\n",
+       "4     category_2_216151_w4           13\n",
+       "..                     ...          ...\n",
+       "372  category_2_1101571_w1           13\n",
+       "373  category_2_1090258_w4           13\n",
+       "374   category_2_906595_w1           11\n",
+       "375    category_2_32245_w1           39\n",
+       "376  category_2_1006090_w2           11\n",
+       "\n",
+       "[377 rows x 2 columns]"
+      ]
+     },
+     "execution_count": 37,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "submission_file"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 38,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-27T01:00:35.896111Z",
+     "iopub.status.busy": "2022-03-27T01:00:35.895067Z",
+     "iopub.status.idle": "2022-03-27T01:00:35.901508Z",
+     "shell.execute_reply": "2022-03-27T01:00:35.900788Z",
+     "shell.execute_reply.started": "2022-03-27T00:56:41.106996Z"
+    },
+    "papermill": {
+     "duration": 0.075769,
+     "end_time": "2022-03-27T01:00:35.901659",
+     "exception": false,
+     "start_time": "2022-03-27T01:00:35.825890",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "## Obtaining the solutions as a CSV file\n",
+    "submission_file.to_csv('submission.csv', index=False)"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.8.5"
+  },
+  "papermill": {
+   "default_parameters": {},
+   "duration": 23.03369,
+   "end_time": "2022-03-27T01:00:36.675891",
+   "environment_variables": {},
+   "exception": null,
+   "input_path": "__notebook__.ipynb",
+   "output_path": "__notebook__.ipynb",
+   "parameters": {},
+   "start_time": "2022-03-27T01:00:13.642201",
+   "version": "2.3.3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
